@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #Author:    Wankko Ree
-#Time:      2020/5/18 15:07
-#Version:   v1.10
+#Time:      2020/11/09 18:10
+#Version:   v1.13
 
 
 import codecs
@@ -97,23 +97,24 @@ try:
         answers[i.groups()[0]] = [answer]
         orders[i.start()] = i.groups()[0]
 
-    questionAfterClass = getMidString(getMidString(response.text, "$('.section3 .w0').on('click',function(){", "});"), "$('", "').removeClass('topindex1');").replace(".", "").split(",")
+    regex = re.search("""\(\$,'(\S+)'\)\['removeClass'\]""", response.text)
+    questionAfterClass = regex.group(1).replace(".", "").split(",")
 
     ordersNew = {}
     for i in sorted(orders.keys()):
         ordersNew[i] = orders[i]
     n = len(ordersNew)
-    # y = len(questionAfterClass) # TODO
-    x = n # x = n - y # TODO
+    y = len(questionAfterClass)
+    x = n - y
     answersString = ""
     for i in range(0, x):
         tmp = "第" + str(i + 1) + "题：" + answers[ordersNew[list(ordersNew.keys())[i]]][0]
         answersString += tmp + "<br />"
         print(tmp)
-    # for i in range(0, y): # TODO
-        # tmp = "课后第" + str(i + 1) + "题：" + answers[ordersNew[list(ordersNew.keys())[i + x]]][0] # TODO
-        # answersString += tmp + "<br />" # TODO
-        # print(tmp) # TODO
+    for i in range(0, y):
+        tmp = "课后第" + str(i + 1) + "题：" + answers[ordersNew[list(ordersNew.keys())[i + x]]][0]
+        answersString += tmp + "<br />"
+        print(tmp)
 
     resultHTML = """<!DOCTYPE html>
 <html lang="zh">
@@ -138,7 +139,7 @@ try:
 					<div class="col-sm-4" align="center">
 	            		<video poster="splittitleImg" width="320px" controls="controls" src="splitvideo"></video>
 	            	</div>
-	            	<div class="col-sm-4">
+	            	<div class="col-sm-8">
 				        <h3 align="center">《splittitle》</h3>
 				        <h4 align="right">——splitminiTitle</h4>
 				        <h5 align="center">官方编辑日期：splitpublishDate</h5>
@@ -151,9 +152,6 @@ try:
 					        Update Time: <kbd>splitupdateTime</kbd><br />
 				        </div>
 				    </div>
-				    <div class="col-sm-4" align="center">
-				    	<iframe frameborder="0" src="https://www.wkr.moe/pay/" width="320px" height="700px"></iframe>
-				    </div>
 				</div>
 				@include('layouts.footer')
 			</div>
@@ -164,6 +162,9 @@ try:
     resultHTML = resultHTML.replace("splittitleImg", titleImg).replace("splittitle", title).replace("splitminiTitle", miniTitle).replace("splitpublishDate", publishDate).replace("splitvideo", video).replace("splitanswersString", answersString).replace("splitupdateTime", updateTime).replace("splitPythonVersion", "Python " + str(sys.version_info.major) + "." + str(sys.version_info.minor) + "." + str(sys.version_info.micro))
     file = codecs.open("YouthtudyAnswers.blade.php", "w", "utf-8")
     file.write(resultHTML)
+except TimeoutError as err:
+    print("网络异常")
+    traceback.print_exc()
 except Exception as err:
     print("ERROR!")
     traceback.print_exc()
