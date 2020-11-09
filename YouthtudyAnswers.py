@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #Author:    Wankko Ree
-#Time:      2020/11/09 18:10
-#Version:   v1.13
+#Time:      2020/11/09 23:06
+#Version:   v1.14
 
 
 import codecs
@@ -65,9 +65,13 @@ try:
     if titleImg[0:4] != "http":
         titleImg = response.url[0:response.url.rfind("/") + 1] + titleImg
     video = html.fromstring(response.text).xpath("//video[@id='Bvideo']/@src")[0]
+    shareImg = getMidString(response.text, "var shareImg = '", "';")
     print(miniTitle + "——《" + title + "》[" + publishDate + "]")
     print(titleImg)
     print(video)
+    print(shareImg)
+
+    encodejs = getMidString(response.text, "<script>", "</script>")
 
     answers = {}
     orders = {}
@@ -121,9 +125,13 @@ try:
 	<head>
 		@include('layouts.header')
 		<title>青学Answers - {{ env('APP_NAME') }}</title>
+		<meta property="og:img" content="splitshareImg">
 	</head>
 	<body class="page-body">
-	    <div class="page-container">
+	    <p style="display: none;">
+            <img src="splitshareImg" />
+        </p>
+        <div class="page-container">
 	        @include('layouts.sidebar')
 	        <div class="main-content">
 	            <nav class="navbar user-info-navbar" role="navigation">
@@ -145,6 +153,13 @@ try:
 				        <h5 align="center">官方编辑日期：splitpublishDate</h5>
 				        <strong>splitanswersString</strong>
 				        <p>答案仅供参考，反正官方动不动就改动框架，我也莫得办法，只能跟在后面修bug</p>
+                        <div class="btn-group" id="fakeTitle">
+                            <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                选择伪造的分享标题 <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                            </ul>
+                        </div>
 				        <div align="center">
 					        Copyright © <kbd>青学Answers</kbd> by <a href="https://www.wkr.moe">Wankko Ree</a> All Rights Reserved.<br />
 					        Powered by <kbd>splitPythonVersion</kbd><br />
@@ -156,12 +171,47 @@ try:
 				@include('layouts.footer')
 			</div>
 		</div>
+		<script src="https://jsdec.js.org/js/dec.js"></script>
+		<script>
+		    function midstr(str, begin, end){
+		        var left = str.indexOf(begin) + begin.length;
+		        var right = str.indexOf(end, left);
+		        return str.substring(left, right);
+		    }
+		    var encjs = String.raw`splitencodejs`;
+		    var decjs = dec_jsjiamiv6_default(encjs);
+		    decjs = decjs.substring(0, decjs.lastIndexOf(';'));
+		    var shareArr = decjs.match(/sharetitle=(\S+?);/g);
+		    for(i in shareArr){
+                var exp = shareArr[i];
+                var value = midstr(exp, '=', ';');
+                var varegex = /_0x(\S+)\['(\S+)'\]/;
+                if(varegex.test(value)){
+                    var name = midstr(exp, "'", "'");
+                    while(decjs.search("'"+name+"':_0x") != -1){
+                        name = midstr(decjs, "'"+name+"':_0x", ']');
+                        name = midstr(name, "'", "'");
+                    }
+                    value = midstr(decjs, "'"+name+"':'", "'");
+                }else{
+                    value = midstr(decjs, "'"+name+"':'", "'");
+                }
+                $("#fakeTitle>ul").append('<li><a href="#">'+ value + '</a></li>');
+            }
+		</script>
+		<script>
+		    $("#fakeTitle>ul>li>a").click(function(){
+                $(document).attr("title", $(this).text());
+                alert("修改标题成功，尽情分享吧");
+            });
+		</script>
 	</body>
 </html>"""
     updateTime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    resultHTML = resultHTML.replace("splittitleImg", titleImg).replace("splittitle", title).replace("splitminiTitle", miniTitle).replace("splitpublishDate", publishDate).replace("splitvideo", video).replace("splitanswersString", answersString).replace("splitupdateTime", updateTime).replace("splitPythonVersion", "Python " + str(sys.version_info.major) + "." + str(sys.version_info.minor) + "." + str(sys.version_info.micro))
+    resultHTML = resultHTML.replace("splittitleImg", titleImg).replace("splittitle", title).replace("splitminiTitle", miniTitle).replace("splitpublishDate", publishDate).replace("splitvideo", video).replace("splitanswersString", answersString).replace("splitupdateTime", updateTime).replace("splitPythonVersion", "Python " + str(sys.version_info.major) + "." + str(sys.version_info.minor) + "." + str(sys.version_info.micro)).replace("splitencodejs", encodejs).replace("splitshareImg", shareImg) # 实际上分享封面图并不显示，必须要公众号api才行
     file = codecs.open("YouthtudyAnswers.blade.php", "w", "utf-8")
     file.write(resultHTML)
+    file.close()
 except TimeoutError as err:
     print("网络异常")
     traceback.print_exc()
